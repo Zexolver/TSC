@@ -13,16 +13,12 @@ namespace TSC
             if (mod == null) return false;
             
             var config = ModContent.GetInstance<TSCConfig>();
-            if (config != null && config.SafeModeActive)
+            if (config != null && config.SafeModeActive && config.CensoredMods != null)
             {
-                // Loop through the string names
-                foreach (string blacklisted in config.CensoredMods)
+                // Instantly checks if the mod's name exists in the player's typed list
+                if (config.CensoredMods.Contains(mod.Name))
                 {
-                    // Check if the string isn't empty, and matches the mod name
-                    if (!string.IsNullOrWhiteSpace(blacklisted) && mod.Name == blacklisted)
-                    {  
-                        return true;
-                    }  
+                    return true;
                 }
             }
             return false;

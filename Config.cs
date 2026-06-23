@@ -11,7 +11,7 @@ namespace TSC
         [DefaultValue(false)]
         public bool SafeModeActive;
 
-        // Using strings so the compiler stays happy
+        // tModLoader does not support dynamic dropdowns, so players must type the mod's internal name.
         public List<string> CensoredMods = new List<string>();
     }
 }
