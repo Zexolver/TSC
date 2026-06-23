@@ -2,7 +2,6 @@ using Terraria;
 using Terraria.ModLoader;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework;
-using System;
 
 namespace TSC
 {
@@ -16,11 +15,14 @@ namespace TSC
             var config = ModContent.GetInstance<TSCConfig>();
             if (config != null && config.SafeModeActive)
             {
-                foreach (string blacklisted in config.CensoredModNames)
+                // Loop through the string names
+                foreach (string blacklisted in config.CensoredMods)
                 {
-                    // Check if the entity belongs to a blacklisted mod
-                    if (mod.Name.Equals(blacklisted, StringComparison.OrdinalIgnoreCase)) 
-                        return true; 
+                    // Check if the string isn't empty, and matches the mod name
+                    if (!string.IsNullOrWhiteSpace(blacklisted) && mod.Name == blacklisted)
+                    {  
+                        return true;
+                    }  
                 }
             }
             return false;

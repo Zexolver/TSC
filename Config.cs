@@ -11,6 +11,7 @@ namespace TSC
         [DefaultValue(false)]
         public bool SafeModeActive;
 
-        public List<string> CensoredModNames = new List<string> { "ExampleMod" };
+        // Using strings so the compiler stays happy
+        public List<string> CensoredMods = new List<string>();
     }
 }
