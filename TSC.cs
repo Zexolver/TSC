@@ -4,6 +4,6 @@ namespace TSC
 {
     public class TSC : Mod
     {
-        // No memory hooks needed! The engine handles interception natively now.
+        // Empty main class. No AutoFillSystem needed.
     }
 }
