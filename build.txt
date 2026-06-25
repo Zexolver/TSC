@@ -1,5 +1,5 @@
 displayName = Terraria Spice Controller
 author = Zexolver
-version = 0.1
+version = 0.0.3
 hideCode = true
 hideResources = true
