@@ -21,7 +21,6 @@ namespace TSC
             RemoveAllChildren();
 
             // The 'MemberInfo' represents the List<string> from our TSCConfig.
-            // We cast its current value to interact with it.
             var censoredList = (List<string>)MemberInfo.GetValue(Item);
             if (censoredList == null)
             {
@@ -32,8 +31,8 @@ namespace TSC
             // Create a scrolling container for our mod list.
             UIPanel listContainer = new UIPanel();
             listContainer.Width.Set(0, 1f);
-            listContainer.Height.Set(400, 0f); // Adjust height as needed
-            listContainer.Top.Set(30, 0f);
+            listContainer.Height.Set(400, 0f); 
+            listContainer.Top.Set(0, 0f); // Shifted back to 0 since the tip text is gone
             listContainer.BackgroundColor = new Color(33, 43, 79) * 0.8f;
             Append(listContainer);
 
@@ -57,14 +56,22 @@ namespace TSC
                 modPanel.Width.Set(0, 1f);
                 modPanel.Height.Set(40, 0f);
 
-                // Check if the mod is currently in our saved list to set initial color.
+                // Check if the mod is currently in our saved list to set initial state.
                 bool isCensored = censoredList.Contains(mod.Name);
                 modPanel.BackgroundColor = isCensored ? new Color(150, 40, 40) : new Color(40, 150, 40);
 
+                // Mod Name (Left side)
                 var modText = new UIText(mod.DisplayName);
                 modText.VAlign = 0.5f;
                 modText.Left.Set(10, 0f);
                 modPanel.Append(modText);
+
+                // SFW/NSFW Status Tag (Right side)
+                var statusText = new UIText(isCensored ? "[NSFW]" : "[SFW]");
+                statusText.VAlign = 0.5f;
+                statusText.HAlign = 0.95f; // Pushes the text to the far right of the panel
+                statusText.TextColor = isCensored ? Color.LightCoral : Color.LightGreen;
+                modPanel.Append(statusText);
 
                 // Add the Click Event to toggle the censor state.
                 modPanel.OnLeftClick += (evt, element) =>
@@ -75,11 +82,15 @@ namespace TSC
                     {
                         censoredList.Remove(mod.Name);
                         modPanel.BackgroundColor = new Color(40, 150, 40); // Green
+                        statusText.SetText("[SFW]");
+                        statusText.TextColor = Color.LightGreen;
                     }
                     else
                     {
                         censoredList.Add(mod.Name);
                         modPanel.BackgroundColor = new Color(150, 40, 40); // Red
+                        statusText.SetText("[NSFW]");
+                        statusText.TextColor = Color.LightCoral;
                     }
 
                     // Tell tModLoader the config has been modified so the Save button works.
@@ -90,7 +101,7 @@ namespace TSC
             }
             
             // Adjust the total height of our custom element so it fits in the parent config menu.
-            Height.Set(450, 0f);
+            Height.Set(400, 0f);
         }
     }
 }
