@@ -1,12 +1,17 @@
-"Keybinds.Toggle Safe Mode.DisplayName": Toggle  Safe  Mode
+"Keybinds.Toggle Safe Mode.DisplayName": Toggle Safe Mode
 
 Configs: {
 	TSCConfig: {
-		DisplayName: T S C Config
+		DisplayName: TSC Config
+
+		Headers: {
+			ModCensoring: Mod Censoring
+			ResourcePackCensoring: Resource Pack Censoring
+		}
 
 		SafeModeActive: {
 			Label: Safe Mode Active
-			Tooltip: ""
+			Tooltip: Turn this on to hide everything from the censored list.
 		}
 
 		CensoredModNames: {
@@ -15,8 +20,13 @@ Configs: {
 		}
 
 		CensoredMods: {
-			Label: Censored Mods
-			Tooltip: ""
+			Label: Mods to Censor
+			Tooltip: Click a mod to add it to the censor list. Green means visible, Red means hidden during Safe Mode.
+		}
+
+		CensoredResourcePacks: {
+			Label: Resource Packs to Censor
+			Tooltip: Click a pack to add it to the censor list. Green means active, Red means disabled during Safe Mode.
 		}
 	}
 }

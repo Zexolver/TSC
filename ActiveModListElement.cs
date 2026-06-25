@@ -16,25 +16,26 @@ namespace TSC
         public override void OnBind()
         {
             base.OnBind();
-
-            // Clear the default tModLoader list UI. We are drawing our own.
             RemoveAllChildren();
 
-            // The 'MemberInfo' represents the List<string> from our TSCConfig.
-            var censoredList = (List<string>)MemberInfo.GetValue(Item);
-            if (censoredList == null)
-            {
-                censoredList = new List<string>();
-                MemberInfo.SetValue(Item, censoredList);
-            }
+            // --- COLLAPSE BUTTON ---
+            UIPanel toggleButton = new UIPanel();
+            toggleButton.Width.Set(0, 1f);
+            toggleButton.Height.Set(40, 0f);
+            toggleButton.BackgroundColor = new Color(45, 55, 85);
+            Append(toggleButton);
 
-            // Create a scrolling container for our mod list.
+            UIText toggleText = new UIText("Mods to Censor (Click to Expand/Collapse)");
+            toggleText.HAlign = 0.5f;
+            toggleText.VAlign = 0.5f;
+            toggleButton.Append(toggleText);
+
+            // --- SCROLLING CONTAINER ---
             UIPanel listContainer = new UIPanel();
             listContainer.Width.Set(0, 1f);
-            listContainer.Height.Set(400, 0f); 
-            listContainer.Top.Set(0, 0f); // Shifted back to 0 since the tip text is gone
+            listContainer.Height.Set(400, 0f);
+            listContainer.Top.Set(45, 0f); // Placed just below the toggle button
             listContainer.BackgroundColor = new Color(33, 43, 79) * 0.8f;
-            Append(listContainer);
 
             UIList modList = new UIList();
             modList.Width.Set(0, 1f);
@@ -49,59 +50,83 @@ namespace TSC
             listContainer.Append(scrollbar);
             modList.SetScrollbar(scrollbar);
 
-            // Loop through all currently active mods in memory.
+            // Generate Mod Panels
             foreach (var mod in ModLoader.Mods.Where(m => m.Name != "ModLoader" && m.Name != "TSC"))
             {
                 var modPanel = new UIPanel();
                 modPanel.Width.Set(0, 1f);
                 modPanel.Height.Set(40, 0f);
 
-                // Check if the mod is currently in our saved list to set initial state.
-                bool isCensored = censoredList.Contains(mod.Name);
+                // Fetch current list to check initial state
+                var initialList = (List<string>)MemberInfo.GetValue(Item) ?? new List<string>();
+                bool isCensored = initialList.Contains(mod.Name);
                 modPanel.BackgroundColor = isCensored ? new Color(150, 40, 40) : new Color(40, 150, 40);
 
-                // Mod Name (Left side)
                 var modText = new UIText(mod.DisplayName);
                 modText.VAlign = 0.5f;
                 modText.Left.Set(10, 0f);
                 modPanel.Append(modText);
 
-                // SFW/NSFW Status Tag (Right side)
                 var statusText = new UIText(isCensored ? "[NSFW]" : "[SFW]");
                 statusText.VAlign = 0.5f;
-                statusText.HAlign = 0.95f; // Pushes the text to the far right of the panel
+                statusText.HAlign = 0.95f;
                 statusText.TextColor = isCensored ? Color.LightCoral : Color.LightGreen;
                 modPanel.Append(statusText);
 
-                // Add the Click Event to toggle the censor state.
                 modPanel.OnLeftClick += (evt, element) =>
                 {
                     SoundEngine.PlaySound(SoundID.MenuTick);
-                    
-                    if (censoredList.Contains(mod.Name))
+
+                    // FIX: Always grab the latest state and CLONE it.
+                    var currentList = (List<string>)MemberInfo.GetValue(Item) ?? new List<string>();
+                    var newList = new List<string>(currentList); // The clone!
+
+                    if (newList.Contains(mod.Name))
                     {
-                        censoredList.Remove(mod.Name);
-                        modPanel.BackgroundColor = new Color(40, 150, 40); // Green
+                        newList.Remove(mod.Name);
+                        modPanel.BackgroundColor = new Color(40, 150, 40);
                         statusText.SetText("[SFW]");
                         statusText.TextColor = Color.LightGreen;
                     }
                     else
                     {
-                        censoredList.Add(mod.Name);
-                        modPanel.BackgroundColor = new Color(150, 40, 40); // Red
+                        newList.Add(mod.Name);
+                        modPanel.BackgroundColor = new Color(150, 40, 40);
                         statusText.SetText("[NSFW]");
                         statusText.TextColor = Color.LightCoral;
                     }
 
-                    // Tell tModLoader the config has been modified so the Save button works.
-                    MemberInfo.SetValue(Item, censoredList);
+                    // Passing a completely new list forces tModLoader to recognize the change!
+                    MemberInfo.SetValue(Item, newList);
                 };
 
                 modList.Add(modPanel);
             }
-            
-            // Adjust the total height of our custom element so it fits in the parent config menu.
-            Height.Set(400, 0f);
+
+            // --- TOGGLE LOGIC ---
+            bool isExpanded = true; // Default to open
+            Append(listContainer);
+            Height.Set(445, 0f); // 40 (button) + 5 (padding) + 400 (list)
+
+            toggleButton.OnLeftClick += (evt, element) =>
+            {
+                SoundEngine.PlaySound(SoundID.MenuTick);
+                isExpanded = !isExpanded;
+
+                if (isExpanded)
+                {
+                    Append(listContainer);
+                    Height.Set(445, 0f);
+                }
+                else
+                {
+                    RemoveChild(listContainer);
+                    Height.Set(40, 0f);
+                }
+                
+                // Recalculates the parent config menu so it collapses properly
+                Recalculate(); 
+            };
         }
     }
 }
