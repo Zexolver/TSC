@@ -108,6 +108,9 @@ namespace TSC
                     else
                         currentDict[pack.Name] = activeState;
 
+                    // TELLS TMODLOADER TO BRING UP THE SAVE BUTTON!
+                    ConfigManager.SetPendingChanges();
+
                     UpdateVisuals(activeState);
                 };
 

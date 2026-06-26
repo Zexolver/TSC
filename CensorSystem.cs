@@ -14,7 +14,7 @@ namespace TSC
             var config = ModContent.GetInstance<TSCConfig>();
             if (config != null && config.SafeModeActive && config.CensoredMods != null)
             {
-                // Updated to use the new List<string> Contains method
+                // Updated to use the new Dictionary TryGetValue method
                 if (config.CensoredMods.TryGetValue(mod.Name, out int state) && state > 0)
                 {
                     return true;
