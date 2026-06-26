@@ -12,8 +12,7 @@ namespace TSC
     {
         public static ModKeybind TogglePanicButton { get; private set; }
         
-        // Added this to remember what packs were on before the panic button was hit
-        public static ResourcePackList PreviousPacks { get; private set; } 
+        public static ResourcePackList PreviousPacks { get; private set; }  
 
         public override void Load()
         {
@@ -26,7 +25,6 @@ namespace TSC
             PreviousPacks = null;
         }
 
-        // Helper method to let us write to the previous packs state
         public static void SetPreviousPacks(ResourcePackList packs)
         {
             PreviousPacks = packs;
@@ -59,9 +57,9 @@ namespace TSC
                 // Save the current state of textures
                 KeybindSystem.SetPreviousPacks(Main.AssetSourceController.ActiveResourcePackList);
 
-                // Filter out the naughty ones
+                // Filter out the naughty ones using the Dictionary logic
                 var safePacks = KeybindSystem.PreviousPacks.AllPacks
-                    .Where(pack => !config.CensoredResourcePacks.Contains(pack.Name))
+                    .Where(pack => !(config.CensoredResourcePacks.TryGetValue(pack.Name, out int state) && state > 0))
                     .ToList();
 
                 // Apply the clean list

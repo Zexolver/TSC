@@ -19,11 +19,11 @@ namespace TSC
             base.OnBind();
             RemoveAllChildren();
 
-            var censoredList = (List<string>)MemberInfo.GetValue(Item);
-            if (censoredList == null)
+            var currentDict = (Dictionary<string, int>)MemberInfo.GetValue(Item);
+            if (currentDict == null)
             {
-                censoredList = new List<string>();
-                MemberInfo.SetValue(Item, censoredList);
+                currentDict = new Dictionary<string, int>();
+                MemberInfo.SetValue(Item, currentDict);
             }
 
             UIPanel listContainer = new UIPanel();
@@ -46,47 +46,69 @@ namespace TSC
             listContainer.Append(scrollbar);
             packList.SetScrollbar(scrollbar);
 
-            // CHANGED: Now looks at ActiveResourcePackList instead of the non-existent Available list
             foreach (var pack in Main.AssetSourceController.ActiveResourcePackList.AllPacks)
             {
                 var packPanel = new UIPanel();
                 packPanel.Width.Set(0, 1f);
                 packPanel.Height.Set(40, 0f);
 
-                bool isCensored = censoredList.Contains(pack.Name);
-                packPanel.BackgroundColor = isCensored ? new Color(150, 40, 40) : new Color(40, 150, 40);
+                int currentState = 0;
+                if (currentDict.TryGetValue(pack.Name, out int state))
+                {
+                    currentState = state;
+                }
 
                 var packText = new UIText(pack.Name);
                 packText.VAlign = 0.5f;
                 packText.Left.Set(10, 0f);
                 packPanel.Append(packText);
 
-                var statusText = new UIText(isCensored ? "[NSFW]" : "[SFW]");
+                var statusText = new UIText("");
                 statusText.VAlign = 0.5f;
                 statusText.HAlign = 0.95f;  
-                statusText.TextColor = isCensored ? Color.LightCoral : Color.LightGreen;
                 packPanel.Append(statusText);
+
+                void UpdateVisuals(int s)
+                {
+                    switch (s)
+                    {
+                        case 0:
+                            packPanel.BackgroundColor = new Color(40, 150, 40); // Green
+                            statusText.SetText("[SFW]");
+                            statusText.TextColor = Color.LightGreen;
+                            break;
+                        case 1:
+                            packPanel.BackgroundColor = new Color(200, 150, 40); // Yellow
+                            statusText.SetText("[SPICY]");
+                            statusText.TextColor = Color.Yellow;
+                            break;
+                        case 2:
+                            packPanel.BackgroundColor = new Color(150, 40, 40); // Red
+                            statusText.SetText("[NSFW]");
+                            statusText.TextColor = Color.LightCoral;
+                            break;
+                    }
+                }
+
+                // Apply initial visuals
+                UpdateVisuals(currentState);
 
                 packPanel.OnLeftClick += (evt, element) =>
                 {
                     SoundEngine.PlaySound(SoundID.MenuTick);
                     
-                    if (censoredList.Contains(pack.Name))
-                    {
-                        censoredList.Remove(pack.Name);
-                        packPanel.BackgroundColor = new Color(40, 150, 40);
-                        statusText.SetText("[SFW]");
-                        statusText.TextColor = Color.LightGreen;
-                    }
-                    else
-                    {
-                        censoredList.Add(pack.Name);
-                        packPanel.BackgroundColor = new Color(150, 40, 40);
-                        statusText.SetText("[NSFW]");
-                        statusText.TextColor = Color.LightCoral;
-                    }
+                    int activeState = 0;
+                    if (currentDict.TryGetValue(pack.Name, out int s)) activeState = s;
 
-                    MemberInfo.SetValue(Item, censoredList);
+                    activeState = (activeState + 1) % 3;
+
+                    // Mutate the dictionary IN-PLACE
+                    if (activeState == 0)
+                        currentDict.Remove(pack.Name);
+                    else
+                        currentDict[pack.Name] = activeState;
+
+                    UpdateVisuals(activeState);
                 };
 
                 packList.Add(packPanel);

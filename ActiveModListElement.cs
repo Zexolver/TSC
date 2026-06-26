@@ -18,7 +18,6 @@ namespace TSC
             base.OnBind();
             RemoveAllChildren();
 
-            // --- COLLAPSE BUTTON ---
             UIPanel toggleButton = new UIPanel();
             toggleButton.Width.Set(0, 1f);
             toggleButton.Height.Set(40, 0f);
@@ -30,11 +29,10 @@ namespace TSC
             toggleText.VAlign = 0.5f;
             toggleButton.Append(toggleText);
 
-            // --- SCROLLING CONTAINER ---
             UIPanel listContainer = new UIPanel();
             listContainer.Width.Set(0, 1f);
             listContainer.Height.Set(400, 0f);
-            listContainer.Top.Set(45, 0f); // Placed just below the toggle button
+            listContainer.Top.Set(45, 0f);
             listContainer.BackgroundColor = new Color(33, 43, 79) * 0.8f;
 
             UIList modList = new UIList();
@@ -50,63 +48,84 @@ namespace TSC
             listContainer.Append(scrollbar);
             modList.SetScrollbar(scrollbar);
 
-            // Generate Mod Panels
+            // Fetch the current dictionary. Initialize it if null.
+            var currentDict = (Dictionary<string, int>)MemberInfo.GetValue(Item);
+            if (currentDict == null)
+            {
+                currentDict = new Dictionary<string, int>();
+                MemberInfo.SetValue(Item, currentDict);
+            }
+
             foreach (var mod in ModLoader.Mods.Where(m => m.Name != "ModLoader" && m.Name != "TSC"))
             {
                 var modPanel = new UIPanel();
                 modPanel.Width.Set(0, 1f);
                 modPanel.Height.Set(40, 0f);
 
-                // Fetch current list to check initial state
-                var initialList = (List<string>)MemberInfo.GetValue(Item) ?? new List<string>();
-                bool isCensored = initialList.Contains(mod.Name);
-                modPanel.BackgroundColor = isCensored ? new Color(150, 40, 40) : new Color(40, 150, 40);
+                int currentState = 0;
+                if (currentDict.TryGetValue(mod.Name, out int state))
+                {
+                    currentState = state;
+                }
 
                 var modText = new UIText(mod.DisplayName);
                 modText.VAlign = 0.5f;
                 modText.Left.Set(10, 0f);
                 modPanel.Append(modText);
 
-                var statusText = new UIText(isCensored ? "[NSFW]" : "[SFW]");
+                var statusText = new UIText("");
                 statusText.VAlign = 0.5f;
                 statusText.HAlign = 0.95f;
-                statusText.TextColor = isCensored ? Color.LightCoral : Color.LightGreen;
                 modPanel.Append(statusText);
+
+                void UpdateVisuals(int s)
+                {
+                    switch (s)
+                    {
+                        case 0:
+                            modPanel.BackgroundColor = new Color(40, 150, 40); // Green
+                            statusText.SetText("[SFW]");
+                            statusText.TextColor = Color.LightGreen;
+                            break;
+                        case 1:
+                            modPanel.BackgroundColor = new Color(200, 150, 40); // Yellow
+                            statusText.SetText("[SPICY]");
+                            statusText.TextColor = Color.Yellow;
+                            break;
+                        case 2:
+                            modPanel.BackgroundColor = new Color(150, 40, 40); // Red
+                            statusText.SetText("[NSFW]");
+                            statusText.TextColor = Color.LightCoral;
+                            break;
+                    }
+                }
+
+                UpdateVisuals(currentState);
 
                 modPanel.OnLeftClick += (evt, element) =>
                 {
                     SoundEngine.PlaySound(SoundID.MenuTick);
 
-                    // FIX: Always grab the latest state and CLONE it.
-                    var currentList = (List<string>)MemberInfo.GetValue(Item) ?? new List<string>();
-                    var newList = new List<string>(currentList); // The clone!
+                    int activeState = 0;
+                    if (currentDict.TryGetValue(mod.Name, out int s)) activeState = s;
 
-                    if (newList.Contains(mod.Name))
-                    {
-                        newList.Remove(mod.Name);
-                        modPanel.BackgroundColor = new Color(40, 150, 40);
-                        statusText.SetText("[SFW]");
-                        statusText.TextColor = Color.LightGreen;
-                    }
+                    activeState = (activeState + 1) % 3;
+
+                    // Mutate the dictionary IN-PLACE so tModLoader detects the changes natively
+                    if (activeState == 0)
+                        currentDict.Remove(mod.Name);
                     else
-                    {
-                        newList.Add(mod.Name);
-                        modPanel.BackgroundColor = new Color(150, 40, 40);
-                        statusText.SetText("[NSFW]");
-                        statusText.TextColor = Color.LightCoral;
-                    }
+                        currentDict[mod.Name] = activeState;
 
-                    // Passing a completely new list forces tModLoader to recognize the change!
-                    MemberInfo.SetValue(Item, newList);
+                    UpdateVisuals(activeState);
                 };
 
                 modList.Add(modPanel);
             }
 
-            // --- TOGGLE LOGIC ---
-            bool isExpanded = true; // Default to open
+            bool isExpanded = true;
             Append(listContainer);
-            Height.Set(445, 0f); // 40 (button) + 5 (padding) + 400 (list)
+            Height.Set(445, 0f);
 
             toggleButton.OnLeftClick += (evt, element) =>
             {
@@ -123,9 +142,7 @@ namespace TSC
                     RemoveChild(listContainer);
                     Height.Set(40, 0f);
                 }
-                
-                // Recalculates the parent config menu so it collapses properly
-                Recalculate(); 
+                Recalculate();  
             };
         }
     }

@@ -16,7 +16,7 @@ namespace TSC
         public override void Action(CommandCaller caller, string input, string[] args)
         {
             var config = ModContent.GetInstance<TSCConfig>();
-            if (config.CensoredMods == null) config.CensoredMods = new List<string>();
+            if (config.CensoredMods == null) config.CensoredMods = new Dictionary<string, int>();
 
             if (args.Length == 0 || args[0].ToLower() == "list")
             {
@@ -25,9 +25,17 @@ namespace TSC
                 
                 foreach (var mod in ModLoader.Mods.Where(m => m.Name != "ModLoader" && m.Name != "TSC"))
                 {
-                    bool isCensored = config.CensoredMods.Contains(mod.Name);
-                    string status = isCensored ? "[CENSORED]" : "[Visible]";
-                    Color color = isCensored ? Color.Red : Color.LimeGreen;
+                    bool isCensored = config.CensoredMods.TryGetValue(mod.Name, out int state) && state > 0;
+                    
+                    string status = "[SFW]";
+                    Color color = Color.LimeGreen;
+
+                    if (isCensored)
+                    {
+                        status = state == 1 ? "[SPICY]" : "[NSFW]";
+                        color = state == 1 ? Color.Yellow : Color.Red;
+                    }
+
                     caller.Reply($"{status} {mod.Name}", color);
                 }
             }

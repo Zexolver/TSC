@@ -15,7 +15,7 @@ namespace TSC
             if (config != null && config.SafeModeActive && config.CensoredMods != null)
             {
                 // Updated to use the new List<string> Contains method
-                if (config.CensoredMods.Contains(mod.Name))
+                if (config.CensoredMods.TryGetValue(mod.Name, out int state) && state > 0)
                 {
                     return true;
                 }
