@@ -12,12 +12,15 @@ namespace TSC
             if (mod == null) return false;
             
             var config = ModContent.GetInstance<TSCConfig>();
-            if (config != null && config.SafeModeActive && config.CensoredMods != null)
+            if (config != null && config.CensoredMods != null)
             {
-                // Updated to use the new Dictionary TryGetValue method
                 if (config.CensoredMods.TryGetValue(mod.Name, out int state) && state > 0)
                 {
-                    return true;
+                    // Censor IF the mod's target rating is stricter (higher) than your currently allowed mode
+                    if (state > (int)config.CurrentSpiceLevel)
+                    {
+                        return true;
+                    }
                 }
             }
             return false;
@@ -26,7 +29,8 @@ namespace TSC
 
     public class CensorItems : GlobalItem
     {
-        public override bool PreDrawInInventory(Item item, SpriteBatch spriteBatch, Vector2 position, Rectangle frame, Color drawColor, Color itemColor, Vector2 origin, float scale)
+        public override bool PreDrawInInventory(Item item, SpriteBatch spriteBatch, Vector2 position, Rectangle frame,
+Color drawColor, Color itemColor, Vector2 origin, float scale)
         {
             if (CensorLogic.ShouldCensor(item.ModItem?.Mod)) return false;  
             return base.PreDrawInInventory(item, spriteBatch, position, frame, drawColor, itemColor, origin, scale);

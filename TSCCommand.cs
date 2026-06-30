@@ -20,13 +20,13 @@ namespace TSC
 
             if (args.Length == 0 || args[0].ToLower() == "list")
             {
-                caller.Reply("--- Loaded Mods ---", Color.Orange);
+                caller.Reply($"--- Loaded Mods (Global Mode: {config.CurrentSpiceLevel.ToString().ToUpper()}) ---", Color.Orange);
                 caller.Reply("Open Mod Configuration to change these settings.", Color.Yellow);
-                
+                 
                 foreach (var mod in ModLoader.Mods.Where(m => m.Name != "ModLoader" && m.Name != "TSC"))
                 {
                     bool isCensored = config.CensoredMods.TryGetValue(mod.Name, out int state) && state > 0;
-                    
+                     
                     string status = "[SFW]";
                     Color color = Color.LimeGreen;
 

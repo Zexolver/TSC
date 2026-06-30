@@ -1,4 +1,7 @@
-"Keybinds.Toggle Safe Mode.DisplayName": Toggle Safe Mode
+Keybinds: {
+	"Toggle Safe Mode.DisplayName": Toggle Safe Mode
+	"Cycle Spice Level.DisplayName": Cycle  Spice  Level
+}
 
 Configs: {
 	TSCConfig: {
@@ -7,6 +10,7 @@ Configs: {
 		Headers: {
 			ModCensoring: Mod Censoring
 			ResourcePackCensoring: Resource Pack Censoring
+			GlobalSettings: Global Settings Header
 		}
 
 		SafeModeActive: {
@@ -27,6 +31,35 @@ Configs: {
 		CensoredResourcePacks: {
 			Label: Resource Packs to Censor
 			Tooltip: Click a pack to add it to the censor list. Green means active, Red means disabled during Safe Mode.
+		}
+
+		ResourcePackPriorities: {
+			Label: Resource Pack Priorities
+			Tooltip: ""
+		}
+
+		CurrentSpiceLevel: {
+			Label: Current Spice Level
+			Tooltip: ""
+		}
+	}
+
+	SpiceLevel: {
+		Tooltip: ""
+
+		Safe: {
+			Label: Safe
+			Tooltip: ""
+		}
+
+		Spicy: {
+			Label: Spicy
+			Tooltip: ""
+		}
+
+		NSFW: {
+			Label: N S F W
+			Tooltip: ""
 		}
 	}
 }

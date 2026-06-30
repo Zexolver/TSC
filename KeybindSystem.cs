@@ -5,29 +5,30 @@ using Microsoft.Xna.Framework.Input;
 using Terraria.IO;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Xna.Framework;
 
 namespace TSC
 {
     public class KeybindSystem : ModSystem
     {
-        public static ModKeybind TogglePanicButton { get; private set; }
+        public static ModKeybind CycleLevelButton { get; private set; }
         
-        public static ResourcePackList PreviousPacks { get; private set; }  
+        public static ResourcePackList PreviousOriginalPacks { get; private set; }  
 
         public override void Load()
         {
-            TogglePanicButton = KeybindLoader.RegisterKeybind(Mod, "Toggle Safe Mode", Keys.P);
+            CycleLevelButton = KeybindLoader.RegisterKeybind(Mod, "Cycle Spice Level", Keys.P);
         }
 
         public override void Unload()
         {
-            TogglePanicButton = null;
-            PreviousPacks = null;
+            CycleLevelButton = null;
+            PreviousOriginalPacks = null;
         }
 
         public static void SetPreviousPacks(ResourcePackList packs)
         {
-            PreviousPacks = packs;
+            PreviousOriginalPacks = packs;
         }
     }
 
@@ -35,13 +36,18 @@ namespace TSC
     {
         public override void ProcessTriggers(TriggersSet triggersSet)
         {
-            if (KeybindSystem.TogglePanicButton.JustPressed)
+            if (KeybindSystem.CycleLevelButton.JustPressed)
             {
                 var config = ModContent.GetInstance<TSCConfig>();
-                config.SafeModeActive = !config.SafeModeActive;
+                
+                // Cycle through levels: Safe (0) -> Spicy (1) -> NSFW (2) -> Safe (0)
+                config.CurrentSpiceLevel = (SpiceLevel)(((int)config.CurrentSpiceLevel + 1) % 3);
 
-                string message = config.SafeModeActive ? "[TSC] Safe Mode ACTIVE. Purging textures..." : "[TSC] Safe Mode DEACTIVATED. Restoring textures...";
-                Main.NewText(message, config.SafeModeActive ? byte.MinValue : byte.MaxValue, 255, byte.MinValue);
+                string modeName = config.CurrentSpiceLevel.ToString().ToUpper();
+                Color msgColor = config.CurrentSpiceLevel == SpiceLevel.Safe ? Color.LightGreen : 
+                                 (config.CurrentSpiceLevel == SpiceLevel.Spicy ? Color.Yellow : Color.LightCoral);
+
+                Main.NewText($"[TSC] Mode Changed to: {modeName}", msgColor);
 
                 ApplyResourcePacks(config);
             }
@@ -52,26 +58,38 @@ namespace TSC
             if (config.CensoredResourcePacks == null || config.CensoredResourcePacks.Count == 0)
                 return;
 
-            if (config.SafeModeActive)
+            // If we are currently allowing everything, restore the original unmodified list
+            if (config.CurrentSpiceLevel == SpiceLevel.NSFW)
             {
-                // Save the current state of textures
-                KeybindSystem.SetPreviousPacks(Main.AssetSourceController.ActiveResourcePackList);
-
-                // Filter out the naughty ones using the Dictionary logic
-                var safePacks = KeybindSystem.PreviousPacks.AllPacks
-                    .Where(pack => !(config.CensoredResourcePacks.TryGetValue(pack.Name, out int state) && state > 0))
-                    .ToList();
-
-                // Apply the clean list
-                Main.AssetSourceController.UseResourcePacks(new ResourcePackList(safePacks));
+                if (KeybindSystem.PreviousOriginalPacks != null)
+                {
+                    Main.AssetSourceController.UseResourcePacks(KeybindSystem.PreviousOriginalPacks);
+                    KeybindSystem.SetPreviousPacks(null); // Clear so it grabs a fresh state next time we restrict
+                }
             }
             else
             {
-                // Restore the original state if we have it saved
-                if (KeybindSystem.PreviousPacks != null)
+                // We are restricting textures. First, save original state if not already saved.
+                if (KeybindSystem.PreviousOriginalPacks == null)
                 {
-                    Main.AssetSourceController.UseResourcePacks(KeybindSystem.PreviousPacks);
+                    KeybindSystem.SetPreviousPacks(Main.AssetSourceController.ActiveResourcePackList);
                 }
+
+                var safePacks = KeybindSystem.PreviousOriginalPacks.AllPacks
+                    .Where(pack => {
+                        // Check if pack has a "Spice State" assigned to it
+                        if (config.CensoredResourcePacks.TryGetValue(pack.Name, out int state) && state > 0)
+                        {
+                            // Keep it only if its rating is lesser or equal to our current active mode limit!
+                            return state <= (int)config.CurrentSpiceLevel;
+                        }
+                        return true; 
+                    })
+                    .OrderByDescending(pack => config.ResourcePackPriorities != null && config.ResourcePackPriorities.TryGetValue(pack.Name, out int priority) ? priority : 0)
+                    .ToList();
+
+                // Apply the strictly clean list
+                Main.AssetSourceController.UseResourcePacks(new ResourcePackList(safePacks));
             }
         }
     }
